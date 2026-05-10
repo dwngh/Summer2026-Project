@@ -10,8 +10,11 @@ main
 ├── Database
 ├── DataScience
 ├── DSA
+│   ├── Algorithm.md
+│   └── DataStructure.md
 ├── Extras 
 ├── OOP
+│   └── CoreConcepts.md
 ├── OS
 ├── Network
 ├── Projects
