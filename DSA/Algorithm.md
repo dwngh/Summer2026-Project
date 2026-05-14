@@ -65,7 +65,7 @@ else:
     print("Not found")
 ```
 
-However, is this algorithm obselete? No! It has been used in many cases and to decide when to use Linear Search, we have to consider these questions:
+However, is this algorithm obsolete? No! It has been used in many cases and to decide when to use Linear Search, we have to consider these questions:
 * Size of the array. If its size is small (i.e $N<64$ bytes, for JDK, $N < 47$, for GNU C++, $N < 16$), linear search is prefered because of both time in practice and *cache locality*.
 * For the data that cannot or costly to sort (for e.g. linked list, streaming data,...), choose Linear search instead of binary search.
 #### Binary Search
@@ -110,8 +110,129 @@ $$pos = low + \left[ \frac{(target - arr[low]) \times (high - low)}{arr[high] - 
 
 Beside above search algorithms, we can optimize the search by ultilizing a appropriate **data structure** (such as Hashmap,...). However, it is out of the scope here.
 ### Sort Algorithms
-## Common Problem-Solving Patterns
+#### Basic Sorting Algorithms
+In this section, we take a look at three algorithms: Insertion sort, Bubble sort and Selection sort. They are comparison-based since they compare pairs of elements in the array to decide whether swap them or not. They are the easiest to implement but not so efficient as their overall complexity is $O(n^2)$:
+* **Bubble sort**: Repeatly iterate the whole array to swap two adjacent elements if their are in wrong place. At the end of each iteration, the largest will "bubble up" to the end.
+* **Selection sort**: Scan the unsorted positions to find the minimum and swap it to the front.
+* **Insertion sort**: Build a sorted section. At each time, an unsorted element is picked and insert to the right position in the sorted section.
+
+When to use these algorithms? Even though the bad complexity, they are commonly used today in below cases:
+* The array size is small.
+* The array is nearly sorted (As insertion sort and bubble sort complexity are both $O(n)$ for the sorted array).
+* There are tight memory constraints, as their space complexity are both $\Omega(1)$.
+
+### Advanced Sorting Algorithms 
+In this section, we take a look at three algorithms: Quick Sort, Merge Sort and Heap Sort. But before diving in, let's talk about these characteristics:
+* **Stability**: Are two elements with same value swapped during the algorithm? In multi sort (sort multiple times with different criterias), the stability make sure that multiple sort can be executed without a following sort corrupting the output of previous sort.
+* **In-place**: Do the algorithm need extra space for executing? When running an algorithm in a memory constrained environment, it is the best to control the algorithm's memory so it will not cause "Out of memory".
+
+#### Quick Sort
+
+| Algorithm | Best (Time) | Average (Time) | Worst (Time) | Space (Worst) |
+| :--- | :--- | :--- | :--- | :--- |
+| **Quicksort** | $\Omega(n \log(n))$ | $\theta(n \log(n))$ | $O(n^2)$ | $O(\log(n))$ |
+
+The idea of quick sort is D&C (Note: in Divide step, we split the array into three parts, and in the Conquer step, we do nothing!). Here is the original version:
+```python
+def quicksort_canonical(arr):
+    if len(arr) <= 1:
+        return arr
+
+    pivot = arr[len(arr) // 2]
+    left_part = [x for x in arr if x < pivot]
+    middle_part = [x for x in arr if x == pivot]
+    right_part = [x for x in arr if x > pivot]
+    return quicksort_canonical(left_part) + middle_part + quicksort_canonical(right_part)
+```
+
+The original version is neither stable nor inplace. Below is the semi inplace version:
+
+```python
+def partition(arr, low, high):
+    pivot = arr[high]
+    i = low - 1
+
+    for j in range(low, high):
+        if arr[j] <= pivot:
+            i += 1
+            arr[i], arr[j] = arr[j], arr[i]
+
+    arr[i + 1], arr[high] = arr[high], arr[i + 1]
+    return i + 1
+
+def quicksort_inplace(arr, low, high):
+    if low < high:
+        pi = partition(arr, low, high)
+
+        quicksort_inplace(arr, low, pi - 1)
+        quicksort_inplace(arr, pi + 1, high)
+```
+
+The space complexity of this version is $O(\log n)$.
+
+Choosing the pivot is important. Quicksort achieved the best performance when the pivot always divide the current array into two parts that has approximately same size. The worst case is the sorted or nearly sorted array, where the complexity can grow up to $O(n^2)$.
+
+#### Merge Sort
+| Algorithm | Best (Time) | Average (Time) | Worst (Time) | Space (Worst) |
+| :--- | :--- | :--- | :--- | :--- |
+| **Mergesort** | $\Omega(n \log(n))$ | $\theta(n \log(n))$ | $O(n \log(n))$ | $O(n)$ |
+
+Merge sort is also a D&C algorithm. Different from Quicksort, Merge sort guarantees the complexity $O(n \log(n))$ in all cases:
+```python
+def merge_sort(arr):
+    if len(arr) <= 1:
+        return arr
+
+    mid = len(arr) // 2
+    left_half = merge_sort(arr[:mid])
+    right_half = merge_sort(arr[mid:])
+
+    return merge(left_half, right_half)
+
+def merge(left, right):
+    sorted_arr = []
+    i = j = 0
+
+    while i < len(left) and j < len(right):
+        if left[i] <= right[j]:
+            sorted_arr.append(left[i])
+            i += 1
+        else:
+            sorted_arr.append(right[j])
+            j += 1
+
+    sorted_arr.extend(left[i:])
+    sorted_arr.extend(right[j:])
+    
+    return sorted_arr
+```
+As the trade off for the time complexity, its space complexity is $O(n)$. So to sort the data with the size 100GB with only 8GB RAM, we need **external merge sort**.
+
+Merge sort is behind modern ```sort()``` function in Java and Python, which use a advanced version of merge sort - Timsort. It is the hybrid sorting algorithm between merge sort and insertion sort.
+
+| Algorithm | Best (Time) | Average (Time) | Worst (Time) | Space (Worst) |
+| :--- | :--- | :--- | :--- | :--- |
+| **Timsort** | $\Omega(n)$ | $\theta(n \log(n))$ | $O(n \log(n))$ | $O(n)$ |
+
+#### Heap Sort
+
+| Algorithm | Best (Time) | Average (Time) | Worst (Time) | Space (Worst) |
+| :--- | :--- | :--- | :--- | :--- |
+| **Heapsort** | $\Omega(n \log(n))$ | $\theta(n \log(n))$ | $O(n \log(n))$ | $O(1)$ |
+
+Look at the algorithm stat, it seems like Heapsort is the best. But in reality, the running time of Heapsort is not as good as other advanced algorithms. The reason is the **cache locality** characteristic, where other algorithm can load and access elements quickly from cache, Heapsort requires reading each element from RAM. Moreover, it is unstable. Therefore Heapsort is only considered when we need an algorithm to run on embbeded system.
+
+### Linear time Sorting Algorithms
+| Algorithm | Best (Time) | Average (Time) | Worst (Time) | Space (Worst) |
+| :--- | :--- | :--- | :--- | :--- |
+| **Bucket Sort** | $\Omega(n+k)$ | $\theta(n+k)$ | $O(n^2)$ | $O(n)$ |
+| **Radix Sort** | $\Omega(nk)$ | $\theta(nk)$ | $O(nk)$ | $O(n+k)$ |
+| **Counting Sort** | $\Omega(n+k)$ | $\theta(n+k)$ | $O(n+k)$ | $O(k)$ |
+
+When we need to sort the data that has a detailed range such as ages, scores, zip codes,..., these linear time sorting algorithms must be in your prioritized options. They are Bucket Sort, Radix Sort and Counting Sort.
+
+<!-- ## Common Problem-Solving Patterns
 ### Multiple Pointers
 ### Sliding Window
 ### Recursion
-### Dynamic Programming
+### Dynamic Programming -->
